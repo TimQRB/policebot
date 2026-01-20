@@ -1,36 +1,148 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Scroll - Информационный помощник полицейского департамента СКО
 
-## Getting Started
+Веб-приложение для информационного помощника на основе GPT, которое отвечает на вопросы пользователей на основе загруженных документов.
 
-First, run the development server:
+## Технологии
+
+- **Next.js 16.1.1** - React фреймворк
+- **PostgreSQL** - База данных
+- **OpenAI GPT-4o-mini** - AI модель для ответов
+- **TypeScript** - Типизированный JavaScript
+- **Tailwind CSS** - Стилизация
+
+## Требования
+
+- Node.js 18+ 
+- PostgreSQL 12+
+- npm или yarn
+
+## Установка и запуск
+
+### 1. Клонирование репозитория
+
+```bash
+git clone https://github.com/TimQRB/policebot.git
+cd policebot
+```
+
+### 2. Установка зависимостей
+
+```bash
+npm install
+```
+
+### 3. Настройка переменных окружения
+
+Создайте файл `.env.local` в корне проекта со следующим содержимым:
+
+```env
+# OpenAI API ключ
+OPENAI_API_KEY=your_openai_api_key_here
+
+# Подключение к базе данных PostgreSQL
+DATABASE_URL=postgresql://username:password@localhost:5432/database_name
+
+# Секретный ключ для JWT токенов
+JWT_SECRET=your_secret_key_here
+
+# Учетные данные администратора
+ADMIN_LOGIN=admin
+ADMIN_PASSWORD=your_password_here
+```
+
+### 4. Настройка базы данных
+
+Убедитесь, что PostgreSQL запущен и создайте базу данных:
+
+```sql
+CREATE DATABASE policedb;
+```
+
+База данных будет автоматически инициализирована при первом запуске приложения (таблицы создадутся автоматически).
+
+### 5. Запуск проекта
+
+#### Режим разработки:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Приложение будет доступно по адресу: [http://localhost:3000](http://localhost:3000)
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+#### Production сборка:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npm run build
+npm start
+```
 
-## Learn More
+## Структура проекта
 
-To learn more about Next.js, take a look at the following resources:
+```
+police/
+├── app/                    # Next.js App Router
+│   ├── api/               # API routes
+│   │   ├── chat/          # API для чата с GPT
+│   │   ├── documents/     # API для управления документами
+│   │   ├── categories/    # API для категорий
+│   │   └── auth/          # API для аутентификации
+│   ├── admin/             # Админ-панель
+│   ├── login/             # Страница входа
+│   └── page.tsx           # Главная страница (чат)
+├── components/             # React компоненты
+├── lib/                    # Утилиты и библиотеки
+│   ├── db.ts              # Подключение к БД
+│   ├── fileParser.ts      # Парсинг файлов (DOCX, TXT, XLSX)
+│   ├── chunker.ts         # Разбиение текста на чанки
+│   └── auth.ts            # Аутентификация
+├── assets/                 # Статические ресурсы
+│   ├── styles/            # CSS стили
+│   └── scripts/           # Клиентские скрипты
+└── public/                 # Публичные файлы
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Основные функции
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- 💬 **Чат с AI** - Задавайте вопросы и получайте ответы на основе загруженных документов
+- 📄 **Управление документами** - Загрузка и управление документами (DOCX, TXT, XLSX)
+- 📁 **Категории и подтемы** - Организация документов по категориям
+- 📊 **Статистика** - Просмотр статистики использования системы
+- 🔐 **Админ-панель** - Управление контентом и настройками
 
-## Deploy on Vercel
+## Поддерживаемые форматы файлов
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- **Word** (.docx)
+- **Текстовые файлы** (.txt)
+- **Excel** (.xlsx, .xls)
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Языки интерфейса
+
+- Русский
+- Қазақша (Казахский)
+
+## Развертывание
+
+### Vercel
+
+1. Подключите репозиторий к Vercel
+2. Добавьте переменные окружения в настройках проекта
+3. Настройте PostgreSQL базу данных (можно использовать Vercel Postgres или внешний сервис)
+4. Деплой произойдет автоматически
+
+### Другие платформы
+
+Проект можно развернуть на любой платформе, поддерживающей Next.js:
+- Railway
+- Render
+- DigitalOcean
+- AWS
+- Azure
+
+## Лицензия
+
+Проект разработан для полицейского департамента СКО.
+
+## Контакты
+
+GitHub: [https://github.com/TimQRB/policebot](https://github.com/TimQRB/policebot)

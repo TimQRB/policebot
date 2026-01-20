@@ -6,7 +6,7 @@ interface ChatMessagesProps {
   messages: Message[];
   loading: boolean;
   language: Language;
-  messagesEndRef: React.RefObject<HTMLDivElement>;
+  messagesEndRef: React.RefObject<HTMLDivElement | null>;
 }
 
 export default function ChatMessages({
