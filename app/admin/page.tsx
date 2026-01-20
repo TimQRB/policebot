@@ -125,7 +125,7 @@ export default function AdminPage() {
           totalCount,
           subtopics: subtopicStats
         };
-      }).sort((a, b) => b.totalCount - a.totalCount);
+      }).sort((a: { totalCount: number }, b: { totalCount: number }) => b.totalCount - a.totalCount);
 
       setCategoryStats(stats);
     } catch (error) {
