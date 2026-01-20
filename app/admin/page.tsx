@@ -105,13 +105,13 @@ export default function AdminPage() {
 
       const stats = cats.map((cat: Category) => {
         const categoryDocs = docs.filter((d: Document) => d.category_id === cat.id);
-        const totalCount = categoryDocs.reduce((sum, doc) => sum + (documentUsageCount[doc.id] || 0), 0);
+        const totalCount = categoryDocs.reduce((sum: number, doc: Document) => sum + (documentUsageCount[doc.id] || 0), 0);
 
         const subtopicStats = cat.subtopics.map((subtopic: Subtopic) => {
           const subtopicDocs = docs.filter((d: Document) => 
             d.category_id === cat.id && d.subtopic_ids && d.subtopic_ids.includes(subtopic.id)
           );
-          const subtopicCount = subtopicDocs.reduce((sum, doc) => sum + (documentUsageCount[doc.id] || 0), 0);
+          const subtopicCount = subtopicDocs.reduce((sum: number, doc: Document) => sum + (documentUsageCount[doc.id] || 0), 0);
           return {
             id: subtopic.id,
             name: subtopic.name,
