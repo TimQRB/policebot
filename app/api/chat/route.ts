@@ -142,14 +142,23 @@ function getClientIP(request: NextRequest): string {
   return 'unknown';
 }
 
-/** Проверка на приветствие */
+/** Проверка на приветствие (учитываем регистр ПРИВЕТ, привет!, и т.п.) */
 function isGreeting(text: string): boolean {
-  const t = text.toLowerCase().replace(/\s+/g, ' ').trim();
+  const t = String(text).replace(/\s+/g, ' ').trim().toLowerCase();
   const greetings = [
     'привет', 'здравствуй', 'здравствуйте', 'добрый день', 'добрый вечер', 'доброе утро',
     'хай', 'здарова', 'приветствую', 'салам', 'сәлем', 'сәлеметсіз бе', 'салем',
   ];
-  return greetings.some(g => t === g || t.startsWith(g + ' ') || t.startsWith(g + '!') || t.startsWith(g + ','));
+  return greetings.some(g => {
+    if (t === g) return true;
+    if (t.startsWith(g + ' ') || t.startsWith(g + '!') || t.startsWith(g + ',')) return true;
+    // только приветствие + пунктуация: "ПРИВЕТ", "привет!", "привет!!"
+    if (t.startsWith(g) && t.length >= g.length) {
+      const rest = t.slice(g.length).replace(/\s/g, '');
+      if (rest === '' || /^[!.,?\-]+$/.test(rest)) return true;
+    }
+    return false;
+  });
 }
 
 /** Проверка на вопрос "кто ты" */
