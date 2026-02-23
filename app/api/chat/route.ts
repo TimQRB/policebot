@@ -142,6 +142,55 @@ function getClientIP(request: NextRequest): string {
   return 'unknown';
 }
 
+/** Проверка на приветствие */
+function isGreeting(text: string): boolean {
+  const t = text.toLowerCase().replace(/\s+/g, ' ').trim();
+  const greetings = [
+    'привет', 'здравствуй', 'здравствуйте', 'добрый день', 'добрый вечер', 'доброе утро',
+    'хай', 'здарова', 'приветствую', 'салам', 'сәлем', 'сәлеметсіз бе', 'салем',
+  ];
+  return greetings.some(g => t === g || t.startsWith(g + ' ') || t.startsWith(g + '!') || t.startsWith(g + ','));
+}
+
+/** Проверка на вопрос "кто ты" */
+function isWhoAreYou(text: string): boolean {
+  const t = text.toLowerCase().replace(/\s+/g, ' ').trim();
+  const patterns = [
+    'кто ты', 'ты кто', 'кто вы', 'вы кто', 'что за бот', 'кто такой', 'представься',
+    'сен кімсің', 'кімсің', 'сіз кімсіз', 'бот кім', 'таныстыр',
+  ];
+  return patterns.some(p => t.includes(p) || t === p.replace(' ', ''));
+}
+
+/** Проверка на вопрос "что умеешь" / "на что можешь ответить" */
+function isWhatCanYouDo(text: string): boolean {
+  const t = text.toLowerCase().replace(/\s+/g, ' ').trim();
+  const patterns = [
+    'что умеешь', 'что ты умеешь', 'на что можешь ответить', 'чем можешь помочь',
+    'твои возможности', 'что можешь', 'какие вопросы', 'на что отвечаешь',
+    'не істей аласың', 'неге жауап бере аласың', 'мүмкіндіктерің', 'қандай сұрақтар',
+  ];
+  return patterns.some(p => t.includes(p));
+}
+
+function getQuickReply(message: string, language: string): string | null {
+  const text = message.trim();
+  if (!text) return null;
+
+  if (isGreeting(text)) {
+    return language === 'kz'
+      ? 'Сәлеметсіз бе! Мен сізге сұрақтарға жауап беруге көмектесетін көмекшімін. Не сұрағыңыз бар?'
+      : 'Здравствуйте! Я помощник, отвечаю на ваши вопросы. Чем могу помочь?';
+  }
+  if (isWhoAreYou(text)) {
+    return language === 'kz'
+      ? 'Менің атым Scroll. Мен сұрақтарға жауап беретін көмекші ботпын. Сұрақ қойсаңыз, жауап беремін.'
+      : 'Меня зовут Scroll. Я бот-помощник, отвечаю на вопросы. Задайте вопрос — отвечу на основе имеющейся информации.';
+  }
+  // «Что умеешь» / «на что можешь ответить» — не быстрый ответ, собираем по документам ниже
+  return null;
+}
+
 export async function POST(request: NextRequest) {
   let language = 'ru';
   try {
@@ -176,6 +225,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const quickReply = getQuickReply(message, language);
+    if (quickReply) {
+      if (sessionId) {
+        await query(
+          'INSERT INTO chat_messages (session_id, language, message, role, document_ids) VALUES ($1, $2, $3, $4, $5)',
+          [sessionId, language, quickReply, 'bot', []]
+        );
+      }
+      setCachedResponse(message, language, quickReply);
+      return NextResponse.json({ response: quickReply });
+    }
+
     const checkDocs = await query('SELECT COUNT(*) FROM documents WHERE is_active = true');
     if (parseInt(checkDocs.rows[0].count) === 0) {
       const noDocsMessage = language === 'kz' 
@@ -186,9 +247,20 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    const relevantChunks = await findRelevantChunks(message, 8, 3000);
+    const isCapabilitiesQuestion = isWhatCanYouDo(message);
+    const [maxChunks, maxContextTokens] = isCapabilitiesQuestion ? [12, 4500] : [8, 3000];
+    const relevantChunks = await findRelevantChunks(
+      isCapabilitiesQuestion ? '' : message,
+      maxChunks,
+      maxContextTokens
+    );
     const context = relevantChunks.content;
     const documentIds = relevantChunks.documentIds;
+    const userMessageForApi = isCapabilitiesQuestion
+      ? (language === 'kz'
+          ? 'Жоғарыдағы контекст негізінде қысқаша тізім бер: қандай тақырыптар бойынша, қандай сұрақтарға жауап бере аласың? Тек контексттегі ақпаратты пайдаланып, қысқа және нақты жазыңыз.'
+          : 'По контексту выше кратко перечисли: на какие темы и какие вопросы ты можешь ответить? Используй только информацию из контекста, ответ короткий и по делу.')
+      : message;
 
     const systemPrompt = language === 'kz'
       ? `Сен көмекшісісің, ол сұрақтарға ТЕК берілген құжаттағы ақпаратты және шығарылған контекстті пайдаланып жауап береді.
@@ -275,7 +347,7 @@ ${context}`;
       model: 'gpt-4o-mini',
       messages: [
         { role: 'system', content: systemPrompt },
-        { role: 'user', content: message },
+        { role: 'user', content: userMessageForApi },
       ],
       max_tokens: 700,
       temperature: 0.3,
